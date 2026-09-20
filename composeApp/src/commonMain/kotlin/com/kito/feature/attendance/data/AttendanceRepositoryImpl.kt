@@ -7,6 +7,7 @@ import com.kito.feature.attendance.data.mapper.toEntity
 import com.kito.feature.attendance.domain.model.Attendance
 import com.kito.feature.attendance.domain.repository.AttendanceRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 /**
@@ -15,8 +16,13 @@ import kotlinx.coroutines.flow.map
 class AttendanceRepositoryImpl(
     private val attendanceDao: AttendanceDAO,
 ) : AttendanceRepository {
-    override fun observeAttendance(year: String, term: String): Flow<List<Attendance>> =
-        attendanceDao.getAttendance(year, term).map { entities -> entities.map { it.toDomain() } }
+    // One stable Room flow (SELECT *) — always reactive to inserts/deletes — filtered in memory
+    // by the selected year/term. Avoids re-creating the query per switch (which drops Room's
+    // invalidation and leaves the screen stale). Rows are keyed by subject+year+term.
+    override fun observeAttendance(year: Flow<String>, term: Flow<String>): Flow<List<Attendance>> =
+        combine(attendanceDao.getAllAttendance(), year, term) { entities, y, t ->
+            entities.filter { it.year == y && it.term == t }.map { it.toDomain() }
+        }
 
     override suspend fun deleteAllAttendance() = attendanceDao.deleteAllAttendance()
 

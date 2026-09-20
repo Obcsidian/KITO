@@ -24,8 +24,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -115,13 +113,10 @@ class HomeViewModel(
         _day.value = day
     }
 
-    // Scope to the selected year/term — the table can hold several terms at once
+    // Scoped to the selected year/term — the table can hold several terms at once
     // (rows are keyed by subject+year+term), so an unfiltered read leaks stale terms.
-    @OptIn(ExperimentalCoroutinesApi::class)
     val attendance: StateFlow<List<Attendance>> =
-        combine(prefs.academicYearFlow, prefs.termCodeFlow) { y, t -> y to t }
-            .distinctUntilChanged()
-            .flatMapLatest { (y, t) -> attendanceRepository.observeAttendance(y, t) }
+        attendanceRepository.observeAttendance(prefs.academicYearFlow, prefs.termCodeFlow)
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),

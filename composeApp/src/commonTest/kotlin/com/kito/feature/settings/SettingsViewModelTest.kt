@@ -20,6 +20,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -222,7 +223,7 @@ class SettingsViewModelTest {
 
         assertEquals("999999", prefsRepository.userRollFlow.first())
         assertEquals("", fakeCredentials.getSapPassword())
-        assertTrue(fakeAttendanceRepository.observeAttendance("2024", "010").first().isEmpty())
+        assertTrue(fakeAttendanceRepository.observeAttendance(flowOf("2024"), flowOf("010")).first().isEmpty())
         assertEquals("999999", spySyncUseCase.syncAllRoll)
         assertEquals("", spySyncUseCase.syncAllPassword)
         assertIs<SyncUiState.Success>(v.syncState.value)
@@ -261,7 +262,7 @@ class SettingsViewModelTest {
 
         assertEquals("2026", prefsRepository.academicYearFlow.first())
         assertEquals("020", prefsRepository.termCodeFlow.first())
-        assertTrue(fakeAttendanceRepository.observeAttendance("2024", "010").first().isEmpty())
+        assertTrue(fakeAttendanceRepository.observeAttendance(flowOf("2024"), flowOf("010")).first().isEmpty())
         assertEquals("123456", spySyncUseCase.syncAllRoll)
         assertEquals("pwd", spySyncUseCase.syncAllPassword)
         assertEquals("2026", spySyncUseCase.syncAllYear)
@@ -290,7 +291,7 @@ class SettingsViewModelTest {
         advanceUntilIdle()
 
         assertEquals("", fakeCredentials.getSapPassword())
-        assertTrue(fakeAttendanceRepository.observeAttendance("2024", "010").first().isEmpty())
+        assertTrue(fakeAttendanceRepository.observeAttendance(flowOf("2024"), flowOf("010")).first().isEmpty())
         assertIs<SyncUiState.Success>(v.syncState.value)
     }
 

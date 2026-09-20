@@ -14,6 +14,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -106,7 +107,7 @@ class ChangeYearTermUseCaseTest {
         assertTrue(result.isSuccess)
         assertEquals("2026", prefsRepository.academicYearFlow.first())
         assertEquals("020", prefsRepository.termCodeFlow.first())
-        assertTrue(fakeAttendanceRepository.observeAttendance("2024", "010").first().isEmpty())
+        assertTrue(fakeAttendanceRepository.observeAttendance(flowOf("2024"), flowOf("010")).first().isEmpty())
 
         assertEquals("roll123", spySyncUseCase.syncAllRoll)
         assertEquals("sapPass", spySyncUseCase.syncAllPassword)
