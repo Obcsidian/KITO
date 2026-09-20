@@ -80,7 +80,7 @@ class AttendanceListScreenViewModel(
             initialValue = false
         )
     private val summary: StateFlow<AttendanceSummary> =
-        getAttendanceSummary()
+        getAttendanceSummary(prefs.academicYearFlow, prefs.termCodeFlow)
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),

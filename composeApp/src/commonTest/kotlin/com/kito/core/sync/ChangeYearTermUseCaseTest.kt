@@ -106,7 +106,7 @@ class ChangeYearTermUseCaseTest {
         assertTrue(result.isSuccess)
         assertEquals("2026", prefsRepository.academicYearFlow.first())
         assertEquals("020", prefsRepository.termCodeFlow.first())
-        assertTrue(fakeAttendanceRepository.observeAttendance().first().isEmpty())
+        assertTrue(fakeAttendanceRepository.observeAttendance("2024", "010").first().isEmpty())
 
         assertEquals("roll123", spySyncUseCase.syncAllRoll)
         assertEquals("sapPass", spySyncUseCase.syncAllPassword)

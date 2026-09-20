@@ -17,8 +17,8 @@ interface AttendanceDAO {
     @Delete
     suspend fun deleteAttendance(attendanceEntity: AttendanceEntity)
 
-    @Query("SELECT * FROM AttendanceEntity")
-    fun getAllAttendance(): Flow<List<AttendanceEntity>>
+    @Query("SELECT * FROM AttendanceEntity WHERE year = :year AND term = :term")
+    fun getAttendance(year: String, term: String): Flow<List<AttendanceEntity>>
 
     @Query("DELETE FROM AttendanceEntity")
     suspend fun deleteAllAttendance()

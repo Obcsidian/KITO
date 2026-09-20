@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
  * entities to domain models; the presentation layer never sees an entity.
  */
 interface AttendanceRepository {
-    fun observeAttendance(): Flow<List<Attendance>>
+    fun observeAttendance(year: String, term: String): Flow<List<Attendance>>
     suspend fun deleteAllAttendance()
     suspend fun insertAttendance(items: List<Attendance>, year: String, term: String)
 }

@@ -15,8 +15,8 @@ import kotlinx.coroutines.flow.map
 class AttendanceRepositoryImpl(
     private val attendanceDao: AttendanceDAO,
 ) : AttendanceRepository {
-    override fun observeAttendance(): Flow<List<Attendance>> =
-        attendanceDao.getAllAttendance().map { entities -> entities.map { it.toDomain() } }
+    override fun observeAttendance(year: String, term: String): Flow<List<Attendance>> =
+        attendanceDao.getAttendance(year, term).map { entities -> entities.map { it.toDomain() } }
 
     override suspend fun deleteAllAttendance() = attendanceDao.deleteAllAttendance()
 
