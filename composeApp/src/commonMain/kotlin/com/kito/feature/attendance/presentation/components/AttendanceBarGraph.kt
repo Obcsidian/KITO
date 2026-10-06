@@ -615,31 +615,3 @@ fun String.toAbbreviation(): String {
         .map { it.first().uppercaseChar() }
         .joinToString("")
 }
-
-fun getFakeAttendanceData(count: Int = 5): List<Attendance> {
-    val base = listOf(
-        Attendance("CS-301", "Computer Networks", 4, 41, 84.0, "A"),
-        Attendance("CS-302", "Operating Systems", 24, 52, 72.0, "B"),
-        Attendance("CS-303", "DB Systems", 18, 45, 61.0, "C"),
-        Attendance("CS-304", "Software Eng", 30, 48, 90.0, "D"),
-        Attendance("CS-305", "AI", 12, 38, 55.0, "E"),
-        Attendance("CS-306", "Compiler Design", 12, 38, 78.0, "F"),
-        Attendance("CS-307", "Cloud Computing", 30, 48, 92.0, "G"),
-        Attendance("CS-308", "Cyber Security", 20, 40, 80.0, "H"),
-    )
-    return List(count) { index -> base[index % base.size] }
-}
-
-@Preview(showBackground = true, widthDp = 360, heightDp = 200)
-@Composable
-fun AttendanceBarCardPreview() {
-    // 💡 Change 'subjectCount' to any number (e.g. 1, 2, 3, 4, 5, 6, 8, 10) to test
-    val subjectCount = 8
-
-    AttendanceBarCard(
-        attendance = getFakeAttendanceData(subjectCount),
-        onNavigate = {},
-        onClick = {},
-        sapLoggedIn = true
-    )
-}
