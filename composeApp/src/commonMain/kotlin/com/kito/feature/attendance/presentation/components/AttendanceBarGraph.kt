@@ -10,8 +10,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -49,6 +51,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
@@ -58,6 +61,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import com.kito.core.designsystem.UIColors
@@ -82,10 +87,11 @@ import kotlin.random.Random
 @Composable
 fun AttendanceBarCard(
     attendance: List<Attendance>,
-    onNavigate:()-> Unit,
-    onClick:() -> Unit,
+    onNavigate: () -> Unit,
+    onClick: () -> Unit,
     sapLoggedIn: Boolean,
-){
+) {
+    val isInPreview = LocalInspectionMode.current
     val colors = UIColors()
     val hazeState = rememberHazeState()
     val hazeNotLoggedIn = rememberHazeState()
@@ -120,62 +126,66 @@ fun AttendanceBarCard(
         .coerceIn(0f, 1f)
 
     val dynamicAspectRatio = lerp(0.25f, 0.35f, progress)
-    LaunchedEffect(Unit) {
-        meshColorAnimators.forEachIndexed { i, anim ->
+
+    if (!isInPreview) {
+        LaunchedEffect(Unit) {
+            meshColorAnimators.forEachIndexed { i, anim ->
+                launch {
+                    val random = Random(i * 97)
+                    while (true) {
+                        val nextColor = meshColors[random.nextInt(meshColors.size)]
+                        anim.animateTo(
+                            targetValue = nextColor,
+                            animationSpec = tween(
+                                durationMillis = random.nextInt(1800, 4200),
+                                easing = LinearOutSlowInEasing
+                            )
+                        )
+                    }
+                }
+            }
+        }
+        LaunchedEffect(Unit) {
             launch {
-                val random = Random(i * 97)
                 while (true) {
-                    val nextColor = meshColors[random.nextInt(meshColors.size)]
-                    anim.animateTo(
-                        targetValue = nextColor,
+                    animatedPointMid.animateTo(
+                        targetValue = 0.3f,
                         animationSpec = tween(
-                            durationMillis = random.nextInt(1800, 4200),
+                            durationMillis = 4000,
                             easing = LinearOutSlowInEasing
+                        )
+                    )
+                    animatedPointMid.animateTo(
+                        targetValue = 0.7f,
+                        animationSpec = tween(
+                            durationMillis = 4000,
+                            easing = LinearOutSlowInEasing
+                        )
+                    )
+                }
+            }
+
+            launch {
+                while (true) {
+                    animatedPointTop.animateTo(
+                        targetValue = 0.2f,
+                        animationSpec = tween(
+                            durationMillis = 4000,
+                            easing = LinearEasing
+                        )
+                    )
+                    animatedPointTop.animateTo(
+                        targetValue = 0.8f,
+                        animationSpec = tween(
+                            durationMillis = 4000,
+                            easing = LinearEasing
                         )
                     )
                 }
             }
         }
     }
-    LaunchedEffect(Unit) {
-        launch {
-            while (true) {
-                animatedPointMid.animateTo(
-                    targetValue = 0.3f,
-                    animationSpec = tween(
-                        durationMillis = 4000,
-                        easing = LinearOutSlowInEasing
-                    )
-                )
-                animatedPointMid.animateTo(
-                    targetValue = 0.7f,
-                    animationSpec = tween(
-                        durationMillis = 4000,
-                        easing = LinearOutSlowInEasing
-                    )
-                )
-            }
-        }
 
-        launch {
-            while (true) {
-                animatedPointTop.animateTo(
-                    targetValue = 0.2f,
-                    animationSpec = tween(
-                        durationMillis = 4000,
-                        easing = LinearEasing
-                    )
-                )
-                animatedPointTop.animateTo(
-                    targetValue = 0.8f,
-                    animationSpec = tween(
-                        durationMillis = 4000,
-                        easing = LinearEasing
-                    )
-                )
-            }
-        }
-    }
     Box(
         modifier = Modifier
             .clip(shape = RoundedCornerShape(26.dp))
@@ -235,66 +245,97 @@ fun AttendanceBarCard(
                         )
                 ) {}
             }
-            LazyRow(
-                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(
-                    space = 12.dp,
-                    alignment = Alignment.CenterHorizontally
-                ),
+            val subjects = if (sapLoggedIn) attendance else sampleAttendanceEntities
+            val subjectCount = subjects.size
+
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(),
-                verticalAlignment = Alignment.CenterVertically,
+                contentAlignment = Alignment.Center
             ) {
-                items(
-                    if (sapLoggedIn) {
-                        attendance
-                    }else{
-                        sampleAttendanceEntities
-                    }
-                ) {
-                    Column(
+                val availableWidth = maxWidth
+                val horizontalPadding = 24.dp // 12.dp start + 12.dp end
+                val spacing = 12.dp
+
+                if (subjectCount >= 6 || subjectCount == 0) {
+                    LazyRow(
+                        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            space = 12.dp,
+                            alignment = Alignment.CenterHorizontally
+                        ),
                         modifier = Modifier
+                            .fillMaxWidth()
                             .fillMaxHeight(),
-                        verticalArrangement = Arrangement.SpaceBetween,
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        AttendanceBarGraph(
-                            attendance = it,
-                            hazeState = hazeState,
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .aspectRatio(dynamicAspectRatio)
-                                .clip(
-                                    RoundedCornerShape(16.dp)
+                        items(subjects) { item ->
+                            Column(
+                                modifier = Modifier.fillMaxHeight(),
+                                verticalArrangement = Arrangement.SpaceBetween,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                AttendanceBarGraph(
+                                    attendance = item,
+                                    hazeState = hazeState,
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .aspectRatio(dynamicAspectRatio)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .weight(1f)
                                 )
-                                .weight(1f)
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = it.subjectName.toAbbreviation(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            fontFamily = FontFamily.Monospace,
-                            style = MaterialTheme.typography.bodyLargeEmphasized,
-                            modifier = Modifier.width(36.dp),
-                            textAlign = TextAlign.Center
-                        )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = item.subjectName.toAbbreviation(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontFamily = FontFamily.Monospace,
+                                    style = MaterialTheme.typography.bodyLargeEmphasized,
+                                    modifier = Modifier.width(36.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                        if (sapLoggedIn && attendance.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "Please Set Correct Year and Term in settings",
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontFamily = FontFamily.Monospace,
+                                    style = MaterialTheme.typography.bodyLargeEmphasized,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .fillParentMaxWidth()
+                                        .padding(horizontal = 40.dp)
+                                )
+                            }
+                        }
                     }
-                }
-                if(sapLoggedIn && attendance.isEmpty()){
-                    item {
-                        Text(
-                            text = "Please Set Correct Year and Term in settings",
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            fontFamily = FontFamily.Monospace,
-                            style = MaterialTheme.typography.bodyLargeEmphasized,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .fillParentMaxWidth()
-                                .padding(horizontal = 40.dp)
-                        )
+                } else {
+                    val contentWidth = availableWidth - horizontalPadding
+                    val calculatedWidth = (contentWidth - (spacing * (subjectCount - 1))) / subjectCount
+                    val targetTubeWidth = calculatedWidth.coerceAtLeast(36.dp)
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight()
+                            .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        subjects.forEach { item ->
+                            AttendanceTubeItem(
+                                attendance = item,
+                                hazeState = hazeState,
+                                tubeWidth = targetTubeWidth,
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .weight(1f)
+                            )
+                        }
                     }
                 }
             }
@@ -341,13 +382,56 @@ fun AttendanceBarCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalHazeMaterialsApi::class, ExperimentalHazeApi::class)
+@Composable
+fun AttendanceTubeItem(
+    attendance: Attendance,
+    hazeState: HazeState,
+    tubeWidth: Dp,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.SpaceBetween,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .clip(RoundedCornerShape(24.dp))
+                .hazeEffect(state = hazeState, style = HazeMaterials.ultraThin()) {
+                    blurRadius = 15.dp
+                    noiseFactor = 0.05f
+                    inputScale = HazeInputScale.Auto
+                    alpha = 0.6f
+                }
+        ) {
+            WaterAnimation(
+                text = attendance.percentage.toInt().toString() + "%",
+                waterLevel = attendance.percentage.toFloat() / 100f,
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = attendance.subjectName.toAbbreviation(),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            fontFamily = FontFamily.Monospace,
+            style = MaterialTheme.typography.bodyLargeEmphasized,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
 @OptIn(ExperimentalHazeMaterialsApi::class, ExperimentalHazeApi::class)
 @Composable
 fun AttendanceBarGraph(
     attendance: Attendance,
-    modifier: Modifier= Modifier,
+    modifier: Modifier = Modifier,
     hazeState: HazeState
-){
+) {
     Box(
         modifier = modifier
             .hazeEffect(state = hazeState, style = HazeMaterials.ultraThin()) {
@@ -371,7 +455,7 @@ fun WaterAnimation(
     waterColor: Color = UIColors().accentOrangeStart,
     waterLevel: Float
 ) {
-
+    val isInPreview = LocalInspectionMode.current
     var waterLevelPercentage by remember { mutableFloatStateOf(1f) }
 
     val textMeasurer = rememberTextMeasurer()
@@ -395,11 +479,13 @@ fun WaterAnimation(
         1.0f to Color(0xFF4A1F00)
     )
 
-    LaunchedEffect(Unit,waterLevel) {
+    LaunchedEffect(Unit, waterLevel) {
         waterLevelPercentage = waterLevel
-        while (true) {
-            withFrameNanos {
-                waveShift += 0.03f
+        if (!isInPreview) {
+            while (true) {
+                withFrameNanos {
+                    waveShift += 0.03f
+                }
             }
         }
     }
@@ -528,4 +614,32 @@ fun String.toAbbreviation(): String {
         .filter { it.isNotEmpty() }
         .map { it.first().uppercaseChar() }
         .joinToString("")
+}
+
+fun getFakeAttendanceData(count: Int = 5): List<Attendance> {
+    val base = listOf(
+        Attendance("CS-301", "Computer Networks", 4, 41, 84.0, "A"),
+        Attendance("CS-302", "Operating Systems", 24, 52, 72.0, "B"),
+        Attendance("CS-303", "DB Systems", 18, 45, 61.0, "C"),
+        Attendance("CS-304", "Software Eng", 30, 48, 90.0, "D"),
+        Attendance("CS-305", "AI", 12, 38, 55.0, "E"),
+        Attendance("CS-306", "Compiler Design", 12, 38, 78.0, "F"),
+        Attendance("CS-307", "Cloud Computing", 30, 48, 92.0, "G"),
+        Attendance("CS-308", "Cyber Security", 20, 40, 80.0, "H"),
+    )
+    return List(count) { index -> base[index % base.size] }
+}
+
+@Preview(showBackground = true, widthDp = 360, heightDp = 200)
+@Composable
+fun AttendanceBarCardPreview() {
+    // 💡 Change 'subjectCount' to any number (e.g. 1, 2, 3, 4, 5, 6, 8, 10) to test
+    val subjectCount = 8
+
+    AttendanceBarCard(
+        attendance = getFakeAttendanceData(subjectCount),
+        onNavigate = {},
+        onClick = {},
+        sapLoggedIn = true
+    )
 }
